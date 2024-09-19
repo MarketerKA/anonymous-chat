@@ -27,9 +27,10 @@ This project is a simple real-time chat application that allows users to send an
 ```plaintext
 project-root/
 ├── back-end/
-│   ├── server.py
+│   ├── main.py
 │   ├── venv/               # Virtual environment for backend dependencies
 │   └── requirements.txt    # Backend dependencies
+│   └── tests/              # tests
 ├── front-end/
 │   ├── public/
 │   ├── src/
@@ -55,7 +56,7 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run the FastAPI server (it will run on http://127.0.0.1:8000)
-python server.py &
+python main.py &
 
 # --- FRONTEND SETUP ---
 
