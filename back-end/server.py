@@ -6,52 +6,54 @@ from typing import List
 
 app = FastAPI()
 
-# Настройка CORS
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Позволяет всем доменам отправлять запросы, можно указать конкретные домены
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы (GET, POST, PUT, DELETE и т.д.)
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-messages = []  # Список для хранения сообщений
-active_connections: List[WebSocket] = []  # Список активных WebSocket соединений
+messages = []  # List for storing messages
+active_connections: List[WebSocket] = []  # List of active WebSocket connections
 
 class Message(BaseModel):
     text: str
 
-async def broadcast_message(message: dict):
-    """Отправка сообщения всем подключенным клиентам."""
+async def broadcast_message(message: dict, sender: WebSocket = None):
+    """Broadcast a message to all connected clients except the sender."""
     for connection in active_connections:
-        await connection.send_json(message)
+        if connection != sender:
+            await connection.send_json(message)
 
 @app.post("/messages")
 async def send_message(message: Message):
-    """Обработка отправки нового сообщения через POST запрос."""
+    """Handle sending a new message via POST request."""
     new_message = {"text": message.text, "timestamp": str(datetime.now())}
     messages.append(new_message)
-    await broadcast_message(new_message)  # Отправка нового сообщения всем активным соединениям
+    await broadcast_message(new_message)  # Send new message to all active connections
     return new_message
 
 @app.get("/messages")
 def get_messages():
-    """Получение всех сообщений."""
+    """Retrieve all messages."""
     return messages
 
 @app.get("/messages/count")
 def get_message_count():
-    """Возвращает текущее количество сообщений в чате."""
+    """Return the current count of messages."""
     return {"count": len(messages)}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """Обработка WebSocket соединений."""
+    """Handle WebSocket connections."""
     await websocket.accept()
     active_connections.append(websocket)
+    
     try:
         while True:
-            await websocket.receive_text()  # Ожидание сообщений от клиента, если требуется
+            await websocket.receive_text()  # Wait for messages from client if needed
     except WebSocketDisconnect:
         active_connections.remove(websocket)
 
